@@ -1,0 +1,17 @@
+{
+    "path_to_model": "THUDM/glm-4v-9b",
+    "attack_fn": "send_email2_attack",
+    "image_name": "llama_adapter_logo",
+    "save_path": "tmp",
+    "use_pgd": false,
+    "pgd_norm": 2.0,
+    "pgd_norm_threshold": 4.0,
+    "pgd_inf_clamp": 0.0,
+    "l2_reg_lambda": 0.05,
+    "step_size": 0.01,
+    "max_steps": 100,
+    "accumulation": 1,
+    "loss_lambda": 0.1,
+    "use_adam": true,
+    "seed": 42
+}

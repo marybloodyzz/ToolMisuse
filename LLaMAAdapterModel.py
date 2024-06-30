@@ -42,6 +42,7 @@ def llama_adapter_forward_inference_all_return(self, visual_query, tokens, start
     h = self.llama.norm(h)
     output = self.llama.output(h)
 
+
     return output
 
 def _convert_image_to_rgb(image):
@@ -136,5 +137,5 @@ class LLaMAAdapterModel(ImageLLM):
         if 'output' in raw_prompt:
             raw_prompt = {k: v for k, v in raw_prompt.items() if k != 'output'}
         return llama_adapter.format_prompt(**{k: v for k, v in raw_prompt.items() if v})
-    
+        #call tokenier
     
