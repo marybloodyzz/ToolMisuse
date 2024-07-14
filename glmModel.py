@@ -7,7 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from PIL import Image
 from torchvision import transforms
 from huggingface_hub import login
-login(token="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")
+login(token="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")
 
 import llama_adapter
 
@@ -40,7 +40,7 @@ class glmModel(ImageLLM):
         self.device = device
         self.base_model = AutoModelForCausalLM.from_pretrained(
             "THUDM/glm-4v-9b",
-            torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float16,
             low_cpu_mem_usage=True,
             trust_remote_code=True
         ).to(self.device)
