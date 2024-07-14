@@ -306,7 +306,7 @@ if __name__ == '__main__':
     with open(os.path.join(args.save_path, "args.json"), "w") as f:
         json.dump(vars(args), f, indent=4)
 
-    device = "cuda:7" if torch.cuda.is_available() else "cpu"
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
     print(device)
     print(torch.__version__)
 
