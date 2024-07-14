@@ -170,29 +170,29 @@ def attack(
     loss_fn = torch.nn.CrossEntropyLoss()
     
 
-    # def adam(gradient, img, step, lr = step_size, betas = (0.9, 0.999), eps = 1e-8, weight_decay = 0, amsgrad = False):
-    #     gradient = gradient + weight_decay * img
-    #     global mt
-    #     global vt
-    #     global max_vt
-    #     mt = betas[0] * mt + (1 - betas[0]) * gradient
-    #     vt = betas[1] * vt + (1 - betas[1]) * gradient**2
+    def adam(gradient, img, step, lr = step_size, betas = (0.9, 0.999), eps = 1e-8, weight_decay = 0, amsgrad = False):
+        gradient = gradient + weight_decay * img
+        global mt
+        global vt
+        global max_vt
+        mt = betas[0] * mt + (1 - betas[0]) * gradient
+        vt = betas[1] * vt + (1 - betas[1]) * gradient**2
 
-    #     bias_correction1 = 1 - betas[0] ** step
-    #     bias_correction2 = 1 - betas[1] ** step
-    #     step_size = lr / bias_correction1
+        bias_correction1 = 1 - betas[0] ** step
+        bias_correction2 = 1 - betas[1] ** step
+        step_size = lr / bias_correction1
         
-    #     bias_correction2_sqrt = math.sqrt(bias_correction2)
+        bias_correction2_sqrt = math.sqrt(bias_correction2)
 
-    #     if amsgrad:
-    #         if isinstance(max_vt, int):
-    #             max_vt = vt
-    #         else:
-    #             max_vt = torch.maximum(max_vt, vt)
-    #         denom = (max_vt.sqrt() / bias_correction2_sqrt) + eps
-    #     else:
-    #         denom = (vt.sqrt() / bias_correction2_sqrt) + eps
-    #     return mt / denom * step_size
+        if amsgrad:
+            if isinstance(max_vt, int):
+                max_vt = vt
+            else:
+                max_vt = torch.maximum(max_vt, vt)
+            denom = (max_vt.sqrt() / bias_correction2_sqrt) + eps
+        else:
+            denom = (vt.sqrt() / bias_correction2_sqrt) + eps
+        return mt / denom * step_size
 
     pbar = tqdm(range(max_steps))
     last_eval_loss = None
@@ -207,73 +207,73 @@ def attack(
             normal_answer = model.generate_during_train(prompt, image_tensor, max_gen_len=128)
 
             model.train()
-    #         current_target = attack_fn.get_integrated_attack(user_instruction, normal_answer)
-    #         if r == 0:
-    #             print("prompt_args", prompt_args)
-    #             print("prompt", prompt)
-    #             print("user_instruction", user_instruction)
-    #             print("normal_answer", normal_answer)
-    #             print("current_target", current_target)
+            current_target = attack_fn.get_integrated_attack(user_instruction, normal_answer)
+            if r == 0:
+                print("prompt_args", prompt_args)
+                print("prompt", prompt)
+                print("user_instruction", user_instruction)
+                print("normal_answer", normal_answer)
+                print("current_target", current_target)
         
             
             prompt_tokens_and_target, target_tokens, prompt_len, first_part_len = model.twoway_tokenize_prompt_target(prompt, normal_answer, attack_fn.get_attack_string(user_instruction))
-    #         print("image tensor size: ", image_tensor.shape)
-    #         with torch.cuda.amp.autocast():
+            print("image tensor size: ", image_tensor.shape)
+            with torch.cuda.amp.autocast():
                 
-    #             logits = model.forward(tokens=prompt_tokens_and_target, image_tensor=image_tensor_to_update)
+                logits = model.forward(tokens=prompt_tokens_and_target, image_tensor=image_tensor_to_update)
 
-    #         l = target_tokens.shape[1]
-    #         l1 = loss_fn(logits.squeeze(0)[:-1][: first_part_len - 1], target_tokens.squeeze(0)[1:][: first_part_len - 1])
-    #         l2 = loss_fn(logits.squeeze(0)[:-1][first_part_len - 1 :], target_tokens.squeeze(0)[1:][first_part_len - 1 :])
-    #         loss = l1 * loss_lambda * (first_part_len - prompt_len) + l2 * (l - first_part_len)
-    #         loss = loss / (l - prompt_len)
-    #         if l2_reg_lambda != 0:
-    #             loss = loss + l2_reg_lambda * l2_reg(image_tensor_to_update, image_tensor_fixed)
-    #         loss = loss / accumulation
-    #         loss.backward()
-    #         if (r + 1) % accumulation == 0:
-    #             with torch.no_grad():
-    #                 if use_adam:
-    #                     gradients = adam(image_tensor_to_update.grad, image_tensor, (r + 1) // accumulation)
-    #                 else:
-    #                     gradients = image_tensor_to_update.grad
-    #                 gradients = image_tensor_to_update.grad * step_size
-    #                 image_tensor -= gradients
+            l = target_tokens.shape[1]
+            l1 = loss_fn(logits.squeeze(0)[:-1][: first_part_len - 1], target_tokens.squeeze(0)[1:][: first_part_len - 1])
+            l2 = loss_fn(logits.squeeze(0)[:-1][first_part_len - 1 :], target_tokens.squeeze(0)[1:][first_part_len - 1 :])
+            loss = l1 * loss_lambda * (first_part_len - prompt_len) + l2 * (l - first_part_len)
+            loss = loss / (l - prompt_len)
+            if l2_reg_lambda != 0:
+                loss = loss + l2_reg_lambda * l2_reg(image_tensor_to_update, image_tensor_fixed)
+            loss = loss / accumulation
+            loss.backward()
+            if (r + 1) % accumulation == 0:
+                with torch.no_grad():
+                    if use_adam:
+                        gradients = adam(image_tensor_to_update.grad, image_tensor, (r + 1) // accumulation)
+                    else:
+                        gradients = image_tensor_to_update.grad
+                    gradients = image_tensor_to_update.grad * step_size
+                    image_tensor -= gradients
 
-    #                 delta = image_tensor.clone().detach() - image_tensor_fixed
+                    delta = image_tensor.clone().detach() - image_tensor_fixed
                     
-    #                 if use_pgd:
-    #                     norm = torch.norm(delta.view(1, 3, -1), p = pgd_norm, dim = -1) # 3 color channels
-    #                     for i in range(3):
-    #                         if norm[0, i] > pgd_norm_threshold:
-    #                             delta[:, i] = delta[:, i] * pgd_norm_threshold / norm[0, i]
-    #                 if pgd_inf_clamp:
-    #                     delta = delta.clamp(min=-pgd_inf_clamp, max=pgd_inf_clamp)
+                    if use_pgd:
+                        norm = torch.norm(delta.view(1, 3, -1), p = pgd_norm, dim = -1) # 3 color channels
+                        for i in range(3):
+                            if norm[0, i] > pgd_norm_threshold:
+                                delta[:, i] = delta[:, i] * pgd_norm_threshold / norm[0, i]
+                    if pgd_inf_clamp:
+                        delta = delta.clamp(min=-pgd_inf_clamp, max=pgd_inf_clamp)
 
-    #                 # make sure still within valid image range
-    #                 image_tensor = image_tensor_fixed + delta    
-    #                 image_tensor = image_tensor.clamp(min=0, max=1)
-    #             model.zero_grad()
+                    # make sure still within valid image range
+                    image_tensor = image_tensor_fixed + delta    
+                    image_tensor = image_tensor.clamp(min=0, max=1)
+                model.zero_grad()
             
-    #             torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
             
-    #         if (r + 1) % 1000 == 0:
-    #             model.eval()
-    #             path_to_adversarial_image = log_image(model, image_tensor, f"step_{r + 1}", save_path)
-    #             eval_mode(
-    #                 model, path_to_original_image, path_to_adversarial_image, attack_fn,
-    #                 save_path,
-    #                 True, f"step_{r + 1}"
-    #             )
-    #             model.train()
-    #         pbar.set_description(f"train_loss: {loss.item()}; eval_loss: {last_eval_loss}")
-    # model.eval()
-    # path_to_adversarial_image = log_image(model, image_tensor, "final", save_path)
-    # eval_mode(
-    #     model, path_to_original_image, path_to_adversarial_image, attack_fn,
-    #     save_path,
-    #     False, "final"
-    # )
+            if (r + 1) % 1000 == 0:
+                model.eval()
+                path_to_adversarial_image = log_image(model, image_tensor, f"step_{r + 1}", save_path)
+                eval_mode(
+                    model, path_to_original_image, path_to_adversarial_image, attack_fn,
+                    save_path,
+                    True, f"step_{r + 1}"
+                )
+                model.train()
+            pbar.set_description(f"train_loss: {loss.item()}; eval_loss: {last_eval_loss}")
+    model.eval()
+    path_to_adversarial_image = log_image(model, image_tensor, "final", save_path)
+    eval_mode(
+        model, path_to_original_image, path_to_adversarial_image, attack_fn,
+        save_path,
+        False, "final"
+    )
     print("about to return image tensor")
     return image_tensor
 
