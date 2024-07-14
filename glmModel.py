@@ -67,6 +67,8 @@ class glmModel(ImageLLM):
 
         
     def forward(self, tokens, image_tensor):
+        for param in self.base_model.parameters():
+            param.requires_grad = False
         L = tokens.shape[1]
         # with torch.no_grad():
         with torch.cuda.amp.autocast():
@@ -97,6 +99,7 @@ class glmModel(ImageLLM):
             
 
     def preprocess_image_for_training(self, path_to_image):
+        print(path_to_image)
         image = Image.open(path_to_image).convert('RGB')
         image_tensor = self.tokenizer.apply_chat_template([{"role": "user", "image": image}],
                                        add_generation_prompt=True, tokenize=True, return_tensors="pt",
